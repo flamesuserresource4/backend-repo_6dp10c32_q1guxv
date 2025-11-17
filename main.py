@@ -53,10 +53,14 @@ def test_database():
 @app.post("/api/contact")
 async def submit_contact(inquiry: ContactInquiry):
     try:
+        if db is None:
+            # Gracefully handle when database is unavailable
+            return {"status": "received", "persisted": False, "message": "Database unavailable; inquiry received but not persisted."}
         inserted_id = create_document("contactinquiry", inquiry)
-        return {"status": "success", "id": inserted_id}
+        return {"status": "success", "id": inserted_id, "persisted": True}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Return a friendly error detail for the frontend to display if needed
+        raise HTTPException(status_code=500, detail=f"Contact submission failed: {str(e)}")
 
 # Simple services endpoint for the frontend to display
 @app.get("/api/services")
